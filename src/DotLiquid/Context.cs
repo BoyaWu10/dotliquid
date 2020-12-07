@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -732,19 +733,22 @@ namespace DotLiquid
         }
 
         private readonly int _timeout;
-        private CancellationToken _cancellationToken = default;
+        private readonly Stopwatch _stopwatch = new Stopwatch();
+        private readonly CancellationToken _cancellationToken = default;
 
         public void RestartTimeout()
         {
-            if (_timeout > 0)
-            {
-                var source = new CancellationTokenSource(_timeout);
-                _cancellationToken = source.Token;
-            }
+            _stopwatch.Restart();
+            _cancellationToken.ThrowIfCancellationRequested();
         }
 
         public void CheckTimeout()
         {
+            if (_timeout > 0 && _stopwatch.ElapsedMilliseconds > _timeout)
+            {
+                throw new TimeoutException();
+            }   
+
             if (_cancellationToken.IsCancellationRequested)
             {
                 throw new TimeoutException();
