@@ -1,12 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using DotLiquid.Exceptions;
 using DotLiquid.Util;
 
@@ -87,6 +87,39 @@ namespace DotLiquid
             FormatProvider = formatProvider;
 
             RestartTimeout();
+
+            SquashInstanceAssignsWithEnvironments();
+        }
+
+        /// <summary>
+        /// Creates a new rendering context
+        /// </summary>
+        /// <param name="environments"></param>
+        /// <param name="outerScope"></param>
+        /// <param name="registers"></param>
+        /// <param name="errorsOutputMode"></param>
+        public Context
+            (List<Hash> environments
+             , Hash outerScope
+             , Hash registers
+             , ErrorsOutputMode errorsOutputMode
+             , int maxIterations
+             , CancellationToken cancellationToken
+             , IFormatProvider formatProvider)
+        {
+            Environments = environments;
+
+            Scopes = new List<Hash>();
+            if (outerScope != null)
+                Scopes.Add(outerScope);
+
+            Registers = registers;
+
+            Errors = new List<Exception>();
+            _errorsOutputMode = errorsOutputMode;
+            _maxIterations = maxIterations;
+            _cancellationToken = cancellationToken;
+            FormatProvider = formatProvider;
 
             SquashInstanceAssignsWithEnvironments();
         }
@@ -699,20 +732,23 @@ namespace DotLiquid
         }
 
         private readonly int _timeout;
-        private readonly Stopwatch _stopwatch = new Stopwatch();
+        private CancellationToken _cancellationToken = default;
 
         public void RestartTimeout()
         {
-            _stopwatch.Restart();
+            if (_timeout > 0)
+            {
+                var source = new CancellationTokenSource(_timeout);
+                _cancellationToken = source.Token;
+            }
         }
 
         public void CheckTimeout()
         {
-            if (_timeout <= 0)
-                return;
-
-            if (_stopwatch.ElapsedMilliseconds > _timeout)
+            if (_cancellationToken.IsCancellationRequested)
+            {
                 throw new TimeoutException();
+            }
         }
     }
 }
