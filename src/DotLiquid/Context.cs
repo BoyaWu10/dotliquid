@@ -747,12 +747,9 @@ namespace DotLiquid
             if (_timeout > 0 && _stopwatch.ElapsedMilliseconds > _timeout)
             {
                 throw new TimeoutException();
-            }   
-
-            if (_cancellationToken.IsCancellationRequested)
-            {
-                throw new TimeoutException();
             }
+
+            _cancellationToken.ThrowIfCancellationRequested();
         }
     }
 }
