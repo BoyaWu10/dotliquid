@@ -64,6 +64,7 @@ namespace DotLiquid
         /// <param name="outerScope"></param>
         /// <param name="registers"></param>
         /// <param name="errorsOutputMode"></param>
+        [Obsolete("The method with timeout argument is deprecated. Please use the one with CancellationToken.")]
         public Context
             (List<Hash> environments
              , Hash outerScope
