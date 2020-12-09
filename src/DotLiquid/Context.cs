@@ -195,7 +195,7 @@ namespace DotLiquid
         /// <returns></returns>
         public string HandleError(Exception ex)
         {
-            if (ex is InterruptException || ex is TimeoutException || ex is RenderException)
+            if (ex is InterruptException || ex is TimeoutException || ex is RenderException || ex is OperationCanceledException)
             {
                 ExceptionDispatchInfo.Capture(ex).Throw();
             }
